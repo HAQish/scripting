@@ -46,16 +46,19 @@ $(window).on("load", function() {
         var target1 = $("#items")[0];
         var target2 = $("#content")[0];
         var target3 = $("#contents")[0];
+        var target4 = $("#contents")[0].childNodes[0].childNodes[5];
 
         var observer1 = new MutationObserver(setup);
         var observer2 = new MutationObserver(setup);
         var observer3 = new MutationObserver(setup);
+        var observer4 = new MutationObserver(setup);
 
         var options = {childList: true}; // when new children are added or old children are removed
 
         observer1.observe(target1, options);
         observer2.observe(target2, options);
         observer3.observe(target3, options);
+        observer4.observe(target4, options);
     }, 1500);
 });
 
@@ -67,3 +70,4 @@ $(window).on("load", function() {
   //regular video pages have the "load" event activate before everything is loaded, throwing an error and stopping the script
   //video pages load in a way that is less reliable and more complicated than when on a channel page or the home page
   //my assumption is that everything loads later because priority is given to the video, so that can start as fast as possible while nothing else loads
+
