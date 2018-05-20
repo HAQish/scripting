@@ -10,25 +10,18 @@
 // @require      https://code.jquery.com/jquery-3.3.1.js
 // ==/UserScript==
 
-console.log("beginning of script");
-
 function setup() {
     var relevant = Array.prototype.filter.call($("a"), function(el) {
-        console.log("running filter on anchors");
         return el.href.includes("youtube.com/watch?v=") && el.href.length < 45 && !el.getAttribute("ytDescriptionListener") && el.id != "thumbnail";
     });
-
-    console.log("relevant as been declared, and it is", relevant);
 
     relevant.forEach(el => {el.setAttribute("ytDescriptionListener", true); // to mark it so we never iterate over it twice
         el.addEventListener("mouseenter", function(e) {
             $("body").append("<div class='YDLdesc'></div>");
-            console.log("eventlistener for mouseenter on anchor activated");
             $.ajax({
                 type: "GET",
                 url: el.href,
                 success: function(data) {
-                    console.log("success in ajax call");
                     var reg = /shortDescription...(.+)...isCrawlable/;
                     var description = reg.exec(data)[1].replace(/\\n/g, "<br>");
                     $(".YDLdesc")[0].innerHTML = description;
@@ -40,7 +33,7 @@ function setup() {
                     $(".YDLdesc").css("bottom", "3%");
                 },
                 error: function(data) {
-                    console.log("error in ajax call");
+                    console.log("error in ajax call", data);
                 }
             });
         });
