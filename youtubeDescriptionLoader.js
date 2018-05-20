@@ -22,6 +22,7 @@ function setup() {
 
     relevant.forEach(el => {el.setAttribute("ytDescriptionListener", true); // to mark it so we never iterate over it twice
         el.addEventListener("mouseenter", function(e) {
+            $("body").append("<div class='YDLdesc'></div>");
             console.log("eventlistener for mouseenter on anchor activated");
             $.ajax({
                 type: "GET",
@@ -29,12 +30,22 @@ function setup() {
                 success: function(data) {
                     console.log("success in ajax call");
                     var reg = /shortDescription...(.+)...isCrawlable/;
-                    alert(reg.exec(data)[1]);
+                    var description = reg.exec(data)[1].replace(/\\n/g, "<br>");
+                    $(".YDLdesc")[0].innerHTML = description;
+                    $(".YDLdesc").css("border", "solid");
+                    $(".YDLdesc").css("border-width", "1");
+                    $(".YDLdesc").css("background-color", "white");
+                    $(".YDLdesc").css("position", "fixed");
+                    $(".YDLdesc").css("right", "1%");
+                    $(".YDLdesc").css("bottom", "3%");
                 },
                 error: function(data) {
                     console.log("error in ajax call");
                 }
             });
+        });
+        el.addEventListener("mouseleave", function(e) {
+            $(".YDLdesc").remove();
         });
     });
 }
