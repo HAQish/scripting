@@ -80,5 +80,5 @@ $(window).on("load", function() {
 //it's terrible to use timeouts, but there seems to be no other way to get it to work on regular video pages
   //regular video pages have the "load" event activate before everything is loaded, throwing an error and stopping the script
   //video pages load in a way that is less reliable and more complicated than when on a channel page or the home page
-  //my assumption is that everything loads later because priority is given to the video, so that can start as fast as possible while nothing else loads
+  //my assumption is that everything loads later because priority is given to the video, so that they can start as fast as possible while nothing else loads
 
