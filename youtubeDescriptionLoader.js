@@ -10,18 +10,25 @@
 // @require      https://code.jquery.com/jquery-3.3.1.js
 // ==/UserScript==
 
+console.log("beginning of script");
+
 function setup() {
     var relevant = Array.prototype.filter.call($("a"), function(el) {
+        console.log("running filter on anchors");
         return el.href.includes("youtube.com/watch?v=") && el.href.length < 45 && !el.getAttribute("ytDescriptionListener") && el.id != "thumbnail";
     });
+
+    console.log("relevant as been declared, and it is", relevant);
 
     relevant.forEach(el => {el.setAttribute("ytDescriptionListener", true); // to mark it so we never iterate over it twice
         el.addEventListener("mouseenter", function(e) {
             $("body").append("<div class='YDLdesc'></div>");
+            console.log("eventlistener for mouseenter on anchor activated");
             $.ajax({
                 type: "GET",
                 url: el.href,
                 success: function(data) {
+                    console.log("success in ajax call");
                     var reg = /shortDescription...(.+)...isCrawlable/;
                     var description = reg.exec(data)[1].replace(/\\n/g, "<br>");
                     $(".YDLdesc")[0].innerHTML = description;
@@ -29,11 +36,13 @@ function setup() {
                     $(".YDLdesc").css("border-width", "1");
                     $(".YDLdesc").css("background-color", "white");
                     $(".YDLdesc").css("position", "fixed");
-                    $(".YDLdesc").css("right", "1%");
+                    $(".YDLdesc").css("left", "1%");
                     $(".YDLdesc").css("bottom", "3%");
+                    $(".YDLdesc").css("max-width", "70%");
+                    $(".YDLdesc")[0].style.zIndex = "50";
                 },
                 error: function(data) {
-                    console.log("error in ajax call", data);
+                    console.log("error in ajax call");
                 }
             });
         });
@@ -73,5 +82,6 @@ $(window).on("load", function() {
 //it's terrible to use timeouts, but there seems to be no other way to get it to work on regular video pages
   //regular video pages have the "load" event activate before everything is loaded, throwing an error and stopping the script
   //video pages load in a way that is less reliable and more complicated than when on a channel page or the home page
-  //my assumption is that everything loads later because priority is given to the video, so that they can start as fast as possible while nothing else loads
+  //my assumption is that everything loads later because priority is given to the video, so that can start as fast as possible while nothing else loads
 
+//occasionally does not work, but works fine with a reload - not sure why
