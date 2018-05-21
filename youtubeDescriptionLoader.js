@@ -10,50 +10,66 @@
 // @require      https://code.jquery.com/jquery-3.3.1.js
 // ==/UserScript==
 
+const CLASS_NAME = "ytDescriptionSet";
+const DESC_CACHE = {};
+let DISPLAY_DIV;
+
 console.log("beginning of script");
 
 function setup() {
-    var relevant = Array.prototype.filter.call($("a"), function(el) {
-        console.log("running filter on anchors");
-        return el.href.includes("youtube.com/watch?v=") && el.href.length < 45 && !el.getAttribute("ytDescriptionListener") && el.id != "thumbnail";
-    });
+    let relevant = getRelevantByPage();
 
     console.log("relevant as been declared, and it is", relevant);
 
-    relevant.forEach(el => {el.setAttribute("ytDescriptionListener", true); // to mark it so we never iterate over it twice
+    relevant.forEach(el => {
+        el.classList.add(CLASS_NAME); // to mark it so we never iterate over it twice
         el.addEventListener("mouseenter", function(e) {
-            $("body").append("<div class='YDLdesc'></div>");
+
             console.log("eventlistener for mouseenter on anchor activated");
-            $.ajax({
-                type: "GET",
-                url: el.href,
-                success: function(data) {
-                    console.log("success in ajax call");
-                    var reg = /shortDescription...(.+)...isCrawlable/;
-                    var description = reg.exec(data)[1].replace(/\\n/g, "<br>");
-                    $(".YDLdesc")[0].innerHTML = description;
-                    $(".YDLdesc").css("border", "solid");
-                    $(".YDLdesc").css("border-width", "1");
-                    $(".YDLdesc").css("background-color", "white");
-                    $(".YDLdesc").css("position", "fixed");
-                    $(".YDLdesc").css("left", "1%");
-                    $(".YDLdesc").css("bottom", "3%");
-                    $(".YDLdesc").css("max-width", "70%");
-                    $(".YDLdesc")[0].style.zIndex = "50";
-                },
-                error: function(data) {
-                    console.log("error in ajax call");
-                }
-            });
+            // IF NOT CACHED =>
+            if (DESC_CACHE[el.title]) {
+                console.log("READING FROM CACHE");
+                $(".YDLdesc")[0].innerHTML = DESC_CACHE[el.title];
+            } else {
+                $.ajax({
+                    type: "GET",
+                    url: el.href,
+                    success: function(data) {
+                        console.log("success in ajax call");
+                        try {
+                            var reg = /shortDescription...(.+)...isCrawlable/;
+                            var description = ((reg.exec(data) || [])[1] || "Description not available").replace(/\\n/g, "<br>");
+                            DESC_CACHE[el.title] = description;
+                            DISPLAY_DIV.innerHTML = description;
+
+                        } catch(e) {
+                            console.log(e);
+                        }
+                    },
+                    error: function(data) {
+                        el.classList.remove(CLASS_NAME);
+                        console.log("error in ajax call");
+                    }
+                });
+            }
         });
         el.addEventListener("mouseleave", function(e) {
-            $(".YDLdesc").remove();
+            // is mouse in the DISPLAY_DIV?
+            setTimeout(function () {
+                if ($('.YDLdesc:hover').length === 0) DISPLAY_DIV.innerHTML = "";
+            }, 1);
         });
     });
 }
 
 $(window).on("load", function() {
+    setupCss();
     setTimeout(function(){
+        $("body").append("<div class='YDLdesc'></div>");
+        DISPLAY_DIV = $(".YDLdesc")[0];
+        DISPLAY_DIV.addEventListener("mouseleave", function (e) {
+            DISPLAY_DIV.innerHTML = "";
+        });
         setup(); // still need to run setup initially, the mutations observers run only when new content is loaded
 
         var target1 = $("#items")[0];
@@ -74,6 +90,44 @@ $(window).on("load", function() {
         observer4.observe(target4, options);
     }, 1500);
 });
+
+function getRelevantByPage() {
+    let relevant = Array.prototype.filter.call($(`a.yt-simple-endpoint#video-title:not(.${CLASS_NAME})`), function(el) {
+        console.log("running filter on anchors");
+        return el.href.length < 65 && el.href.includes("youtube.com/watch?v=");
+    });
+    return relevant;
+}
+
+function setupCss() {
+    try {
+        let style = `
+        <style>
+            .YDLdesc {
+                border: solid;
+                border-width: 1;
+                background-color: white;
+                position: fixed;
+                left: 1%;
+                bottom: 3%;
+                max-width: 70%;
+                z-index: 50;
+                padding: 12px;
+                -webkit-transition: opacity 0.4s, width 0.6s, height 0.6s;
+                transition-timing-function: ease-out;
+            }
+            .YDLdesc:empty {
+                opacity: 0;
+                -webkit-transition: opacity 0s;
+            }
+        </style>
+        `;
+        let $style = $(style);
+        $('head').append($style);
+    } catch(e) {
+        console.log(e);
+    }
+}
 
 //.on("DOMSubtreeModified") fires off all of the time, with any miniscule event; if used, must use throttled version
 
