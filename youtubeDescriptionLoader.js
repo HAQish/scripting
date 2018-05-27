@@ -2,7 +2,7 @@
 // @name         YouTube Description Loader
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  try to take over the world!
+// @description  Load the descriptions of YouTube videos
 // @author       You
 // @match        https://www.youtube.com/*
 // @match        http://www.youtube.com/*
@@ -14,6 +14,7 @@ const CLASS_NAME = "ytDescriptionSet";
 const DESC_CACHE = {};
 let DISPLAY_DIV;
 let theme = true;
+let macroDivSize = localStorage.getItem("YDLSize") ? localStorage.getItem("YDLSize") : 25; // default is small : 25% square
 
 console.log("beginning of script");
 
@@ -59,7 +60,6 @@ function setup() {
                            // }
                             DISPLAY_DIV.innerHTML = newHTML;
                             $(".YDLClose").on("click", function(e) { // for X closing
-                                console.log("adding close event listener");
                                 DISPLAY_DIV.innerHTML = "";
                             });
                             $(".YDLThemeSwitcher").on("click", function(e) {
@@ -99,21 +99,51 @@ function setup() {
 }
 
 $(window).on("load", function() {
+    console.log("size in localStorage is", localStorage.getItem("YDLSize"));
     $("body").append("<div class='macroDiv'></div>");
     DISPLAY_DIV = $(".macroDiv")[0];
     setupCss();
 
     $("body").append("<div class='YDLSettingsToggle'>(Settings)</div>"); // settings
-    $(".YDLSettings").on("click", function(e) {
-        $("body").append(`<div class='macroYDLSettingsDiv'>
+    $("body").append(`<div class='macroYDLSettingsDiv'>
                             <div class='YDLSettingsWrapper'>
                             <div class='YDLSettingsClose'>(Close)</div>
-                            Change size of description box: <br>
-                            <div class='YDLSettingsChangeLarge'>Large</div>
-                            <div class='YDLSettingsChangeMedium'>Medium</div>
-                            <div class='YDLSettingsChangeSmall'>Small</div>
+                            <div class='YDLSettingsText'>Change size of description box: </div><br>
+                            <div class='YDLSettingsChangeLarge'>Large</div><br>
+                            <div class='YDLSettingsChangeMedium'>Medium</div><br>
+                            <div class='YDLSettingsChangeSmall'>Small</div><br>
+                            <div class='YDLSettingsPinOn'>Keep popups pinned</div><br>
+                            <div class='YDLSettingsPinOff'>Don't keep popups pinned</div><br>
                             </div>
-                            </div>`);
+                      </div>`);
+    $(".YDLSettingsToggle").on("click", function(e) {
+        $(".macroYDLSettingsDiv").css("display", "block");
+    });
+    $(".YDLSettingsClose").on("click", function(e) {
+        $(".macroYDLSettingsDiv").css("display", "none");
+        //$(".macroYDLSettingsDiv")[0].remove();
+        console.log("heard click to close settings");
+    });
+    $(".YDLSettingsChangeLarge").on("click", function(e) {
+        localStorage.setItem("YDLSize", 65);
+        macroDivSize = localStorage.getItem("YDLSize");
+        $(".macroDiv").css("width", `${macroDivSize}%`);
+        $(".macroDiv").css("height", `${macroDivSize}%`);
+        console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+    });
+    $(".YDLSettingsChangeMedium").on("click", function(e) {
+        localStorage.setItem("YDLSize", 45);
+        macroDivSize = localStorage.getItem("YDLSize");
+        $(".macroDiv").css("width", `${macroDivSize}%`);
+        $(".macroDiv").css("height", `${macroDivSize}%`);
+        console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+    });
+    $(".YDLSettingsChangeSmall").on("click", function(e) {
+        localStorage.setItem("YDLSize", 25);
+        macroDivSize = localStorage.getItem("YDLSize");
+        $(".macroDiv").css("width", `${macroDivSize}%`);
+        $(".macroDiv").css("height", `${macroDivSize}%`);
+        console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
     });
 
     setTimeout(function(){ // creating the macro-level for the description
@@ -126,7 +156,7 @@ $(window).on("load", function() {
 
         if (window.location.href.slice(0, 32) === "https://www.youtube.com/watch?v=") {
             console.log("watching video detected");
-            //var target1 = $("#items.style-scope ytd-watch-next-secondary-results-renderer")[0];
+            // var target1 = $("#items.style-scope ytd-watch-next-secondary-results-renderer")[0];
             var target1 = $("#related")[0].children[1].children[1];
             var observer1 = new MutationObserver(setup);
             observer1.observe(target1, options);
@@ -173,8 +203,8 @@ function setupCss() {
                 position: fixed;
                 left: 1%;
                 bottom: 3%;
-                width: 25%;
-                height: 25%;
+                width: ${macroDivSize}%;
+                height: ${macroDivSize}%;
                 z-index: 50;
                 padding: 1px;
                 -webkit-transition: opacity 0.4s, width 0.6s, height 0.6s;
@@ -183,6 +213,7 @@ function setupCss() {
             .macroDiv:empty {
                 opacity: 0;
                 -webkit-transition: opacity 0s;
+                z-index: -50;
             }
             .YDLWrapper {
                 position: relative;
@@ -242,13 +273,76 @@ function setupCss() {
                 top: 0%;
                 left: 2%;
             }
-.macroYDLSettingsDiv {
-position: fixed;
-background-color: #eaeaea;
-}
-.YDLSettingsWrapper {
-position: relative
-}
+            .YDLSettingsToggle {
+                position: fixed;
+                top: 0%;
+                right: 0%;
+                z-index: 2020;
+            }
+            .macroYDLSettingsDiv {
+                display: none;
+                position: fixed;
+                top: 50%;
+                right: 50%;
+                background-color: #eaeaea;
+                height: 35%;
+                width: 20%;
+                z-index: 51;
+            }
+            .YDLSettingsWrapper {
+                position: relative;
+                height: 100%;
+                width: 100%;
+            }
+            .YDLSettingsClose {
+                color: red;
+                position: absolute;
+                top: 1%;
+                right: 1%;
+            }
+            .YDLSettingsChangeLarge {
+                position: absolute;
+                left: 5%;
+                padding: 10px;
+                top: 25%;
+                height: 15%;
+                width: 75%;
+            }
+            .YDLSettingsChangeMedium {
+                position: absolute;
+                left: 5%;
+                padding: 10px;
+                top: 50%;
+                height: 15%;
+                width: 75%;
+            }
+            .YDLSettingsChangeSmall {
+                position: absolute;
+                left: 5%;
+                padding: 10px;
+                top: 75%;
+                height: 15%;
+                width: 75%;
+            }
+            .YDLSettingsText {
+                position: absolute;
+                padding: 3px;
+                left: 2%;
+                top: 7%;
+                height: 15%;
+                width: 80%;
+            }
+            .YDLSettingsPinOn {
+                position: absolute;
+                left: 5%;
+                padding: 10px;
+            }
+            .YDLSettingsPinOff {
+                position: absolute;
+                left: 5%;
+                padding: 10px;
+            }
+
         </style>
         `;
         let $style = $(style);
