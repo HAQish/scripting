@@ -10,6 +10,8 @@
 // @require      https://code.jquery.com/jquery-3.3.1.js
 // ==/UserScript==
 
+console.log("beginning of YDL script");
+
 const CLASS_NAME = "ytDescriptionSet";
 const DESC_CACHE = {};
 let DISPLAY_DIV;
@@ -17,7 +19,7 @@ let theme = true;
 let macroDivSize = localStorage.getItem("YDLSize") ? localStorage.getItem("YDLSize") : 260; // default is small : 260 pixels
 let descHeight = localStorage.getItem("descHeight") ? localStorage.getItem("descHeight") : 70; // default is small : 70%
 
-console.log("beginning of script");
+console.log("YDL some variables declared");
 
 function setup() {
     let relevant = getRelevantByPage();
@@ -52,12 +54,20 @@ function setup() {
                             var subs = (regSubs.exec(data) || "")[1];
                             var regDate = /"dateText":."simpleText":"Published on (.+)".,"description"/;
                             var date = (regDate.exec(data) || "")[1];
-                            var regThumb = /"channelThumbnail":."thumbnails":.."url":"([^"]+)","width"/;
+                            var regThumb = /:\{"owner":\{"videoOwnerRenderer":\{"thumbnail":\{"thumbnails":\[\{"url":"([^"]+)","width"/;
                             var thumb = (regThumb.exec(data) || "")[1];
-                            let ratingBarSizes = ratio(likes, dislikes);
-                            let dislikeLeft = ratingBarSizes[0] + 51;
+                            var regCaps = /Tracks\\":\[\{\\"captionTrackIndices\\":\[0\],\\"visibility\\/; // backwards, caps exist if null
+                            var caps = !regCaps.exec(data);
+                            var regQual = /quality\_label\=((\d+)p)\\u0026/g;
+                            var quals = data.match(regQual);
+                            var fixedQuals = regExFixerQuals(quals); // an array of all relevant values
+                            var regFPS = /\\u0026fps=(\d+)\\u0026/g;
+                            var fpsNums = data.match(regFPS);
+                            var fixedFPSNums = regExFixerFPS(fpsNums); // an array of all relevant values
+                            let ratingBarSizes = likes != undefined && dislikes != undefined ? ratio(likes, dislikes) : undefined;
+                            let dislikeLeft = ratingBarSizes ? ratingBarSizes[0] + 51 : undefined;
                             var newHTML = `<div class=${theme ? 'YDLWrapper' : 'YDLWrapper2'}>
-                                                <div class=${theme ? 'YDLDescription' : 'YDLDescription2'}>${description === undefined ? "Description not available" : decodeHTML(description)}</div> <br>
+                                                <div class=${theme ? 'YDLDescription' : 'YDLDescription2'} style='height: ${descHeight}%'>${description === undefined ? "Description not available" : decodeHTML(description)}</div> <br>
                                                 <div class='YDLLikes'>${likes === undefined ? "<span class='unavailable'>Likes not available.</span>" : commaHandler(likes) + " Likes"}</div> <br>
                                                 <div class='YDLDislikes'>${dislikes === undefined ? "<span class='unavailable'>Dislikes not available.</span>" : commaHandler(dislikes) + " Dislikes"}</div> <br>
                                                 <div class='YDLSubs'>${subs === undefined ? "<span class='unavailable'>Subscribers not available.</span>" : commaHandler(subs) + " Subscribers"}</div> <br>
@@ -67,8 +77,11 @@ function setup() {
                                                 <div class='YDLSettingsChangeMedium'>Medium</div>
                                                 <div class='YDLSettingsChangeSmall'>Small</div></div>
                                                 <div class='YDLClose'><div class='YDLCloseX'>X</div></div>
-                                                <div class='YDLRatingBarLike' style='width: ${ratingBarSizes[0]}px;'></div>
-                                                <div class='YDLRatingBarDislike' style='left: ${dislikeLeft}px; width: ${ratingBarSizes[1]}px'></div>
+                                                <div class='YDLCaps'>${caps ? "CC" : ""}</div>
+                                                <div class='YDLQuals'>${fixedQuals[0]}</div>
+                                                <div class='YDLFPS'>${fixedFPSNums[0]}</div>
+                                                <div class='YDLRatingBarLike' style='width: ${ratingBarSizes === undefined ? "0" : ratingBarSizes[0]}px;'></div>
+                                                <div class='YDLRatingBarDislike' style='left: ${dislikeLeft === undefined ? "0" : dislikeLeft}px; width: ${ratingBarSizes === undefined ? "0" : ratingBarSizes[1]}px'></div>
                                                 <span class='YDLThemeSwitcher'>Switch Themes</span>
                                            </div>`;
                            // if (window.location.href.slice(0, 32) === "https://www.youtube.com/watch?v=") {
@@ -113,6 +126,13 @@ function setup() {
                                 $(".YDLDescription").css("height", `${descHeight}%`);
                                 $(".YDLDescription2").css("height", `${descHeight}%`);
                                 console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+                                let ratingBarSizes = likes != undefined && dislikes != undefined ? ratio(likes, dislikes) : undefined;
+                                let dislikeLeft = ratingBarSizes ? ratingBarSizes[0] + 51 : undefined;
+                                if (ratingBarSizes) {
+                                    $(".YDLRatingBarLike")[0].style.width = `${ratingBarSizes[0]}px`;
+                                    $(".YDLRatingBarDislike")[0].style.left = `${dislikeLeft}px`;
+                                    $(".YDLRatingBarDislike")[0].style.width = `${ratingBarSizes[1]}px`;
+                                }
                             });
                             $(".YDLSettingsChangeMedium").on("click", function(e) {
                                 localStorage.setItem("YDLSize", 450);
@@ -124,6 +144,13 @@ function setup() {
                                 $(".YDLDescription").css("height", `${descHeight}%`);
                                 $(".YDLDescription2").css("height", `${descHeight}%`);
                                 console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+                                let ratingBarSizes = likes != undefined && dislikes != undefined ? ratio(likes, dislikes) : undefined;
+                                let dislikeLeft = ratingBarSizes ? ratingBarSizes[0] + 51 : undefined;
+                                if (ratingBarSizes) {
+                                    $(".YDLRatingBarLike")[0].style.width = `${ratingBarSizes[0]}px`;
+                                    $(".YDLRatingBarDislike")[0].style.left = `${dislikeLeft}px`;
+                                    $(".YDLRatingBarDislike")[0].style.width = `${ratingBarSizes[1]}px`;
+                                }
                             });
                             $(".YDLSettingsChangeSmall").on("click", function(e) {
                                 localStorage.setItem("YDLSize", 260);
@@ -135,6 +162,13 @@ function setup() {
                                 $(".YDLDescription").css("height", `${descHeight}%`);
                                 $(".YDLDescription2").css("height", `${descHeight}%`);
                                 console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+                                let ratingBarSizes = likes != undefined && dislikes != undefined ? ratio(likes, dislikes) : undefined;
+                                let dislikeLeft = ratingBarSizes ? ratingBarSizes[0] + 51 : undefined;
+                                if (ratingBarSizes) {
+                                    $(".YDLRatingBarLike")[0].style.width = `${ratingBarSizes[0]}px`;
+                                    $(".YDLRatingBarDislike")[0].style.left = `${dislikeLeft}px`;
+                                    $(".YDLRatingBarDislike")[0].style.width = `${ratingBarSizes[1]}px`;
+                                }
                             });
                         } catch(e) {
                             console.log(e);
@@ -214,7 +248,7 @@ $(window).on("load", function() {
     }, 1500);
 });
 
-function getRelevantByPage() { // rework for video pages
+function getRelevantByPage() {
 
     let relevant;
 
@@ -258,13 +292,41 @@ function commaHandler(el) {
 
 function ratio(likes, dislikes) {
     // getting rid of potential commas first and turning to Number type
+    let delta;
+    let width = localStorage.getItem("YDLSize");
+    if (width == 260) {delta = 271;}
+    if (width == 450) {delta = 509;}
+    if (width == 650) {delta = 758;}
     let likesNum = Number(likes.split(",").join(""));
     let dislikesNum = Number(dislikes.split(",").join(""));
     let total = likesNum + dislikesNum;
-    let likesPx = Math.floor((likesNum / total) * 271);
-    let dislikesPx = Math.floor((dislikesNum / total) * 271);
-    console.log("in ratio, likesNum, dislikesNum, total, likesPx, dislikesPx", likesNum, dislikesNum, likesPx, dislikesPx);
+    let likesPx = Math.floor((likesNum / total) * delta);
+    let dislikesPx = Math.floor((dislikesNum / total) * delta);
+    console.log("in ratio, likesNum, dislikesNum, total, likesPx, dislikesPx, width, delta", likesNum, dislikesNum, likesPx, dislikesPx, width, delta);
     return [likesPx, dislikesPx];
+}
+
+function regExFixerQuals(arr) { // an array of video qualities yet to be isolated via regex
+    console.log("in regExFixer, arr", arr);
+    var newArr = [];
+    arr.forEach(el => {
+        let newEl = el.match(/label=(\d+p)/)[1];
+        if (!newArr.includes(newEl)) {
+            newArr.push(newEl);
+        }
+    });
+    return newArr;
+}
+
+function regExFixerFPS(arr) { // an array of FPS values yet to be isolated via regex
+    var newArr = [];
+    arr.forEach(el => {
+        let newEl = el.match(/fps=(\d+)/)[1];
+        if (!newArr.includes(newEl)) {
+            newArr.push(newEl);
+        }
+    });
+    return newArr;
 }
 
 function setupCss() {
@@ -325,7 +387,6 @@ function setupCss() {
             }
             .YDLDescription {
                 position: absolute;
-                height: ${descHeight}%;
                 top: 18px;
                 left: 0.5px;
                 right: 0.2px;
@@ -339,7 +400,6 @@ function setupCss() {
             }
             .YDLDescription2 {
                 position: absolute;
-                height: 70%;
                 top: 18px;
                 left: 0.5px;
                 right: 0.2px;
@@ -390,6 +450,28 @@ function setupCss() {
                 bottom: 36px;
                 right: 1px;
                 font-size: 12px;
+            }
+            .YDLCaps {
+                position: absolute;
+                bottom: 20px;
+                font-size: 11px;
+                right: 1px;
+                background-color: #e6e6e6;
+                padding-right: 3px;
+                padding-left: 3px;
+                color: #676767;
+            }
+            .YDLQuals {
+                position: absolute;
+                bottom: 20px;
+                font-size: 11px;
+                right: 30px;
+            }
+            .YDLFPS {
+                position: absolute;
+                bottom: 20px;
+                font-size: 11px;
+                right: 65px;
             }
             .YDLThumb {
                 position: absolute;
@@ -510,6 +592,11 @@ position: absolute;
     left: 51px; dislike has like width + 51
     font-size: 12px;
     background-color: lightblue;
-    width: 271px; <== (max)
+    width: 271px; <== (max), 758 if large, 509 if medium
     height: 5px;
 */
+
+//look into adding video qualities available
+//subtitles, closed captions
+
+//need to deal with fact that YT is now, more or less, a SPA - need to re-run script if changing between channel - video - home - search
