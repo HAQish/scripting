@@ -2,7 +2,7 @@
 // @name         YouTube Description Loader
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  Load the descriptions of YouTube videos
+// @description  try to take over the world!
 // @author       You
 // @match        https://www.youtube.com/*
 // @match        http://www.youtube.com/*
@@ -14,7 +14,8 @@ const CLASS_NAME = "ytDescriptionSet";
 const DESC_CACHE = {};
 let DISPLAY_DIV;
 let theme = true;
-let macroDivSize = localStorage.getItem("YDLSize") ? localStorage.getItem("YDLSize") : 25; // default is small : 25% square
+let macroDivSize = localStorage.getItem("YDLSize") ? localStorage.getItem("YDLSize") : 260; // default is small : 260 pixels
+let descHeight = localStorage.getItem("descHeight") ? localStorage.getItem("descHeight") : 70; // default is small : 70%
 
 console.log("beginning of script");
 
@@ -41,16 +42,33 @@ function setup() {
                         console.log("success in ajax call");
                         try {
                             var regDesc = /shortDescription...(.+)...isCrawlable/;
-                            var description = ((regDesc.exec(data) || [])[1] || "Description not available").replace(/\\n/g, "<br>");
-                            var regLikes = /{"label":"like this video along with (\d+) other people"}/;
+                            //var description = ((regDesc.exec(data) || [])[1] || "Description not available").replace(/\\n/g, "<br>");
+                            var description = (regDesc.exec(data) || "")[1];
+                            var regLikes = /{"label":"like this video along with ([0-9]{1,3}(,?[0-9]{1,3}?)*) other pe...."}/; // can be "people" or "person"
                             var likes = (regLikes.exec(data) || "")[1];
-                            var regDislikes = /{"label":"dislike this video along with (\d+) other people"}/;
+                            var regDislikes = /{"label":"dislike this video along with ([0-9]{1,3}(,?[0-9]{1,3}?)*) other pe...."}/; // can be "people" or "person"
                             var dislikes = (regDislikes.exec(data) || "")[1];
+                            var regSubs = /"subscriberCountText":{"runs":.{"text":"([0-9]{1,3}(,?[0-9]{1,3}?)*) subscribers"}.}/;
+                            var subs = (regSubs.exec(data) || "")[1];
+                            var regDate = /"dateText":."simpleText":"Published on (.+)".,"description"/;
+                            var date = (regDate.exec(data) || "")[1];
+                            var regThumb = /"channelThumbnail":."thumbnails":.."url":"([^"]+)","width"/;
+                            var thumb = (regThumb.exec(data) || "")[1];
+                            let ratingBarSizes = ratio(likes, dislikes);
+                            let dislikeLeft = ratingBarSizes[0] + 51;
                             var newHTML = `<div class=${theme ? 'YDLWrapper' : 'YDLWrapper2'}>
-                                                <div class=${theme ? 'YDLDescription' : 'YDLDescription2'}>${description}</div> <br>
-                                                <div class='YDLLikes'>${likes === undefined ? "Likes not available." : likes + " Likes"}</div> <br>
-                                                <div class='YDLDislikes'>${dislikes === undefined ? "Dislikes not available." : dislikes + " Dislikes"}</div> <br>
-                                                <span class='YDLClose'>(Close)</span>
+                                                <div class=${theme ? 'YDLDescription' : 'YDLDescription2'}>${description === undefined ? "Description not available" : decodeHTML(description)}</div> <br>
+                                                <div class='YDLLikes'>${likes === undefined ? "<span class='unavailable'>Likes not available.</span>" : commaHandler(likes) + " Likes"}</div> <br>
+                                                <div class='YDLDislikes'>${dislikes === undefined ? "<span class='unavailable'>Dislikes not available.</span>" : commaHandler(dislikes) + " Dislikes"}</div> <br>
+                                                <div class='YDLSubs'>${subs === undefined ? "<span class='unavailable'>Subscribers not available.</span>" : commaHandler(subs) + " Subscribers"}</div> <br>
+                                                <div class='YDLDate'>${date === undefined ? "<span class='unavailable'>Date not available.</span>" : "Uploaded on " + date}</div> <br>
+                                                <div class='YDLThumb'>${thumb === undefined ? "Thumb not available." : "<img src="+thumb+" width=50 height=50>"}</div> <br>
+                                                <div class='YDLSettingsWrapper'><div class='YDLSettingsChangeLarge'>Large</div>
+                                                <div class='YDLSettingsChangeMedium'>Medium</div>
+                                                <div class='YDLSettingsChangeSmall'>Small</div></div>
+                                                <div class='YDLClose'><div class='YDLCloseX'>X</div></div>
+                                                <div class='YDLRatingBarLike' style='width: ${ratingBarSizes[0]}px;'></div>
+                                                <div class='YDLRatingBarDislike' style='left: ${dislikeLeft}px; width: ${ratingBarSizes[1]}px'></div>
                                                 <span class='YDLThemeSwitcher'>Switch Themes</span>
                                            </div>`;
                            // if (window.location.href.slice(0, 32) === "https://www.youtube.com/watch?v=") {
@@ -58,6 +76,14 @@ function setup() {
                            // } else {
                            //     DESC_CACHE[el.title] = newHTML;
                            // }
+                            //if (likes != undefined && dislikes != undefined) { // not working for some reason
+                            //    let ratingBarSizes = ratio(likes, dislikes);
+                            //    $(".YDLRatingBarLike").css("width", JSON.stringify(ratingBarSizes[0])+"px");
+                            //    let dislikeLeft = ratingBarSizes[0] + 51;
+                            //    $(".YDLRatingBarDislike").css("left", JSON.stringify(dislikeLeft)+"px");
+                            //    $(".YDLRatingBarDislike").css("width", JSON.stringify(ratingBarSizes[1])+"px");
+                            //    console.log("ij if statement for rating bar, likewidth, dislikeleft, dislikewidth", `${ratingBarSizes[0]}px`, `${dislikeLeft}px`, `${ratingBarSizes[1]}px`);
+                            //}
                             DISPLAY_DIV.innerHTML = newHTML;
                             $(".YDLClose").on("click", function(e) { // for X closing
                                 DISPLAY_DIV.innerHTML = "";
@@ -76,6 +102,39 @@ function setup() {
                                     $(".YDLDescription2")[0].classList.add("YDLDescription");
                                     $(".YDLDescription2")[0].classList.remove("YDLDescription2");
                                 }
+                            });
+                            $(".YDLSettingsChangeLarge").on("click", function(e) {
+                                localStorage.setItem("YDLSize", 650);
+                                localStorage.setItem("descHeight", 88);
+                                macroDivSize = localStorage.getItem("YDLSize");
+                                descHeight = localStorage.getItem("descHeight");
+                                $(".macroDiv").css("width", `${macroDivSize * 1.25}px`);
+                                $(".macroDiv").css("height", `${macroDivSize}px`);
+                                $(".YDLDescription").css("height", `${descHeight}%`);
+                                $(".YDLDescription2").css("height", `${descHeight}%`);
+                                console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+                            });
+                            $(".YDLSettingsChangeMedium").on("click", function(e) {
+                                localStorage.setItem("YDLSize", 450);
+                                localStorage.setItem("descHeight", 82.5);
+                                macroDivSize = localStorage.getItem("YDLSize");
+                                descHeight = localStorage.getItem("descHeight");
+                                $(".macroDiv").css("width", `${macroDivSize * 1.25}px`);
+                                $(".macroDiv").css("height", `${macroDivSize}px`);
+                                $(".YDLDescription").css("height", `${descHeight}%`);
+                                $(".YDLDescription2").css("height", `${descHeight}%`);
+                                console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
+                            });
+                            $(".YDLSettingsChangeSmall").on("click", function(e) {
+                                localStorage.setItem("YDLSize", 260);
+                                localStorage.setItem("descHeight", 70);
+                                macroDivSize = localStorage.getItem("YDLSize");
+                                descHeight = localStorage.getItem("descHeight");
+                                $(".macroDiv").css("width", `${macroDivSize * 1.25}px`);
+                                $(".macroDiv").css("height", `${macroDivSize}px`);
+                                $(".YDLDescription").css("height", `${descHeight}%`);
+                                $(".YDLDescription2").css("height", `${descHeight}%`);
+                                console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
                             });
                         } catch(e) {
                             console.log(e);
@@ -104,18 +163,18 @@ $(window).on("load", function() {
     DISPLAY_DIV = $(".macroDiv")[0];
     setupCss();
 
-    $("body").append("<div class='YDLSettingsToggle'>(Settings)</div>"); // settings
-    $("body").append(`<div class='macroYDLSettingsDiv'>
-                            <div class='YDLSettingsWrapper'>
-                            <div class='YDLSettingsClose'>(Close)</div>
-                            <div class='YDLSettingsText'>Change size of description box: </div><br>
-                            <div class='YDLSettingsChangeLarge'>Large</div><br>
-                            <div class='YDLSettingsChangeMedium'>Medium</div><br>
-                            <div class='YDLSettingsChangeSmall'>Small</div><br>
-                            <div class='YDLSettingsPinOn'>Keep popups pinned</div><br>
-                            <div class='YDLSettingsPinOff'>Don't keep popups pinned</div><br>
-                            </div>
-                      </div>`);
+    //$("body").append("<div class='YDLSettingsToggle'>(Settings)</div>"); // settings
+    //$("body").append(`<div class='macroYDLSettingsDiv'>
+                           // <div class='YDLSettingsWrapper'>
+                           // <div class='YDLSettingsClose'>(Close)</div>
+                           // <div class='YDLSettingsText'>Change size of description box: </div><br>
+                           // <div class='YDLSettingsChangeLarge'>Large</div><br>
+                           // <div class='YDLSettingsChangeMedium'>Medium</div><br>
+                           // <div class='YDLSettingsChangeSmall'>Small</div><br>
+                           // <div class='YDLSettingsPinOn'>Keep popups pinned</div><br>
+                           // <div class='YDLSettingsPinOff'>Don't keep popups pinned</div><br>
+                           // </div>
+                    //  </div>`);
     $(".YDLSettingsToggle").on("click", function(e) {
         $(".macroYDLSettingsDiv").css("display", "block");
     });
@@ -124,27 +183,7 @@ $(window).on("load", function() {
         //$(".macroYDLSettingsDiv")[0].remove();
         console.log("heard click to close settings");
     });
-    $(".YDLSettingsChangeLarge").on("click", function(e) {
-        localStorage.setItem("YDLSize", 65);
-        macroDivSize = localStorage.getItem("YDLSize");
-        $(".macroDiv").css("width", `${macroDivSize}%`);
-        $(".macroDiv").css("height", `${macroDivSize}%`);
-        console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
-    });
-    $(".YDLSettingsChangeMedium").on("click", function(e) {
-        localStorage.setItem("YDLSize", 45);
-        macroDivSize = localStorage.getItem("YDLSize");
-        $(".macroDiv").css("width", `${macroDivSize}%`);
-        $(".macroDiv").css("height", `${macroDivSize}%`);
-        console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
-    });
-    $(".YDLSettingsChangeSmall").on("click", function(e) {
-        localStorage.setItem("YDLSize", 25);
-        macroDivSize = localStorage.getItem("YDLSize");
-        $(".macroDiv").css("width", `${macroDivSize}%`);
-        $(".macroDiv").css("height", `${macroDivSize}%`);
-        console.log("changed localStorage, now", localStorage.getItem("YDLSize"));
-    });
+
 
     setTimeout(function(){ // creating the macro-level for the description
         //DISPLAY_DIV.addEventListener("mouseleave", function (e) {
@@ -172,7 +211,7 @@ $(window).on("load", function() {
             observer3.observe(target3, options);
             observer4.observe(target4, options);
         }
-    }, 500);
+    }, 1500);
 });
 
 function getRelevantByPage() { // rework for video pages
@@ -192,6 +231,42 @@ function getRelevantByPage() { // rework for video pages
     return relevant;
 }
 
+function decodeHTML(html) {
+    var txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    let finalText = txt.value;
+    return finalText.replace(/\\n/g, "<br>")
+                    .replace(/\\"/g, `"`)
+                    .replace(/\\u0026/g, "&")
+                    .replace(/\\u003c/g, "<")
+                    .replace(/\\u003e/g, ">");
+}
+
+function commaHandler(el) {
+    let splitNum = el.split(",");
+    let numOfCommas = el.split(",").length - 1;
+    if (numOfCommas === 1) {
+        return splitNum[0] += "K";
+    } else if (numOfCommas === 2) {
+        return splitNum[0] += "M";
+    } else if (numOfCommas === 3) {
+        return splitNum[0] += "B";
+    } else {
+        return splitNum[0];
+    }
+}
+
+function ratio(likes, dislikes) {
+    // getting rid of potential commas first and turning to Number type
+    let likesNum = Number(likes.split(",").join(""));
+    let dislikesNum = Number(dislikes.split(",").join(""));
+    let total = likesNum + dislikesNum;
+    let likesPx = Math.floor((likesNum / total) * 271);
+    let dislikesPx = Math.floor((dislikesNum / total) * 271);
+    console.log("in ratio, likesNum, dislikesNum, total, likesPx, dislikesPx", likesNum, dislikesNum, likesPx, dislikesPx);
+    return [likesPx, dislikesPx];
+}
+
 function setupCss() {
     try {
         let style = `
@@ -203,12 +278,13 @@ function setupCss() {
                 position: fixed;
                 left: 1%;
                 bottom: 3%;
-                width: ${macroDivSize}%;
-                height: ${macroDivSize}%;
+                width: ${macroDivSize * 1.25}px;
+                height: ${macroDivSize}px;
                 z-index: 50;
                 padding: 1px;
                 -webkit-transition: opacity 0.4s, width 0.6s, height 0.6s;
                 transition-timing-function: ease-out;
+                font-size: 12.5px;
             }
             .macroDiv:empty {
                 opacity: 0;
@@ -231,47 +307,104 @@ function setupCss() {
             }
             .YDLClose {
                 position: absolute;
-                top: 0%;
-                right: 2%;
-                color: red;
+                top: 1px;
+                right: 1px;
+                color: white;
+                background-color: red;
+                width: 14px;
+                height: 14px;
+                border: thin;
+                border-size: 0.5;
+                border-color: black;
+                border-style: ridge;
+            }
+            .YDLCloseX {
+                top: 1px;
+                right: 2px;
+                padding-left: 3px;
             }
             .YDLDescription {
                 position: absolute;
-                width: 98%;
-                height: 80%;
-                top: 5%;
-                left: 1%;
+                height: ${descHeight}%;
+                top: 18px;
+                left: 0.5px;
+                right: 0.2px;
                 background-color: #efefef;
                 overflow: scroll;
+                padding-top: 2px;
+                padding-left: 2px;
+                border: #a5a5a5;
+                border-width: thin;
+                border-style: ridge;
             }
             .YDLDescription2 {
                 position: absolute;
-                width: 98%;
-                height: 80%;
-                top: 5%;
-                left: 1%;
+                height: 70%;
+                top: 18px;
+                left: 0.5px;
+                right: 0.2px;
                 background-color: #333333;
                 color: white;
                 overflow: scroll;
+                padding-top: 2px;
+                padding-left: 2px;
+                border: #a5a5a5;
+                border-width: thin;
+                border-style: ridge;
             }
             .YDLLikes {
                 position: absolute;
-                width: 50%;
-                height: 5%;
-                bottom: 1%;
-                left: 5%;
+                bottom: 4px;
+                left: 54px;
+                font-size: 12px;
             }
             .YDLDislikes {
                 position: absolute;
-                width: 50%;
-                height: 5%;
-                bottom: 1%;
-                right: 5%;
+                bottom: 4px;
+                right: 4px;
+                font-size: 12px;
+            }
+            .YDLRatingBarLike {
+                position: absolute;
+                bottom: 1px;
+                left: 51px;
+                font-size: 12px;
+                background-color: lightblue;
+                height: 5px;
+            }
+            .YDLRatingBarDislike {
+                position: absolute;
+                bottom: 1px;
+                font-size: 12px;
+                background-color: red;
+                height: 5px;
+            }
+            .YDLSubs {
+                position: absolute;
+                bottom: 36px;
+                left: 54px;
+                font-size: 12px;
+            }
+            .YDLDate {
+                position: absolute;
+                bottom: 36px;
+                right: 1px;
+                font-size: 12px;
+            }
+            .YDLThumb {
+                position: absolute;
+                height: 50px;
+                width: 50px;
+                left: 1px;
+                bottom: 2px;
+            }
+            .unavailable {
+                font-size: 9.8px;
             }
             .YDLThemeSwitcher {
                 position: absolute;
-                top: 0%;
-                left: 2%;
+                top: 1px;
+                left: 4px;
             }
             .YDLSettingsToggle {
                 position: fixed;
@@ -290,39 +423,39 @@ function setupCss() {
                 z-index: 51;
             }
             .YDLSettingsWrapper {
-                position: relative;
-                height: 100%;
-                width: 100%;
+                height: 13px;
+                top: 2px;
+                padding-left: 90px;
+                padding-right: 40px;
             }
             .YDLSettingsClose {
                 color: red;
                 position: absolute;
-                top: 1%;
-                right: 1%;
+                top: 1px;
+                right: 1px;
+                width: 16px;
+                height: 16px;
+                border: solid;
+                border-size: 0.5;
+                border-color: black;
             }
             .YDLSettingsChangeLarge {
                 position: absolute;
-                left: 5%;
-                padding: 10px;
-                top: 25%;
-                height: 15%;
-                width: 75%;
+                left: 35%;
+                top: 1px;
+                font-size: 12.5px;
             }
             .YDLSettingsChangeMedium {
                 position: absolute;
-                left: 5%;
-                padding: 10px;
-                top: 50%;
-                height: 15%;
-                width: 75%;
+                left: 57%;
+                top: 3px;
+                font-size: 11px;
             }
             .YDLSettingsChangeSmall {
                 position: absolute;
-                left: 5%;
-                padding: 10px;
-                top: 75%;
-                height: 15%;
-                width: 75%;
+                left: 80%;
+                top: 3.75px;
+                font-size: 9.5px;
             }
             .YDLSettingsText {
                 position: absolute;
@@ -370,3 +503,13 @@ function setupCss() {
     // more information such as likes/dislikes, numbers of subscriptions user has, user profile picture, video category
 
 //no date on video page, so add it
+
+/* styling for ratings bar
+position: absolute;
+    bottom: 1px;
+    left: 51px; dislike has like width + 51
+    font-size: 12px;
+    background-color: lightblue;
+    width: 271px; <== (max)
+    height: 5px;
+*/
