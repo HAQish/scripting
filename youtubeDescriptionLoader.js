@@ -22,6 +22,9 @@ let descHeight = localStorage.getItem("descHeight") ? localStorage.getItem("desc
 console.log("YDL some variables declared");
 
 function setup() {
+    $(".macroDiv").remove();
+    $("body").append("<div class='macroDiv'></div>");
+    DISPLAY_DIV = $(".macroDiv")[0];
     let relevant = getRelevantByPage();
 
     console.log("relevant as been declared, and it is", relevant);
@@ -196,8 +199,6 @@ function setup() {
 
 $(window).on("load", function() {
     console.log("size in localStorage is", localStorage.getItem("YDLSize"));
-    $("body").append("<div class='macroDiv'></div>");
-    DISPLAY_DIV = $(".macroDiv")[0];
     setupCss();
 
     //$("body").append("<div class='YDLSettingsToggle'>(Settings)</div>"); // settings
@@ -212,14 +213,14 @@ $(window).on("load", function() {
                            // <div class='YDLSettingsPinOff'>Don't keep popups pinned</div><br>
                            // </div>
                     //  </div>`);
-    $(".YDLSettingsToggle").on("click", function(e) {
-        $(".macroYDLSettingsDiv").css("display", "block");
-    });
-    $(".YDLSettingsClose").on("click", function(e) {
-        $(".macroYDLSettingsDiv").css("display", "none");
-        //$(".macroYDLSettingsDiv")[0].remove();
-        console.log("heard click to close settings");
-    });
+    //$(".YDLSettingsToggle").on("click", function(e) {
+    //    $(".macroYDLSettingsDiv").css("display", "block");
+    //});
+    //$(".YDLSettingsClose").on("click", function(e) {
+    //    $(".macroYDLSettingsDiv").css("display", "none");
+    //    //$(".macroYDLSettingsDiv")[0].remove();
+    //    console.log("heard click to close settings");
+    //});
 
 
     setTimeout(function(){ // creating the macro-level for the description
@@ -233,7 +234,7 @@ $(window).on("load", function() {
             if (currentURL !== currentRelevantURL) {
                 currentURL = currentRelevantURL;
                 console.log("YDL detected new page loaded SPA style");
-                setup();
+                setTimeout(setup, 1500);
             }
         }, 1500);
 
@@ -653,3 +654,4 @@ position: absolute;
     //depending on when you make a get request, perhaps the front end of youtube can render the video given the data either way
 
 //need to have menu appear near anchor tag or near mouse
+//mutation observer disconnect
