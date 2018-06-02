@@ -18,11 +18,11 @@ let DISPLAY_DIV;
 let theme = true;
 let macroDivSize = localStorage.getItem("YDLSize") ? localStorage.getItem("YDLSize") : 260; // default is small : 260 pixels
 let descHeight = localStorage.getItem("descHeight") ? localStorage.getItem("descHeight") : 70; // default is small : 70%
+var currentURL = window.location.href.split("#")[0].split("&t=")[0]; // to store URL on hard load to handle SPA behavior
 
 console.log("YDL some variables declared");
 
 function setup() {
-    $(".macroDiv").remove();
     $("body").append("<div class='macroDiv'></div>");
     DISPLAY_DIV = $(".macroDiv")[0];
     let relevant = getRelevantByPage();
@@ -223,41 +223,70 @@ $(window).on("load", function() {
     //});
 
 
-    setTimeout(function(){ // creating the macro-level for the description
+    setTimeout(function(){
+        // creating the macro-level div for the description
         //DISPLAY_DIV.addEventListener("mouseleave", function (e) {
         //    DISPLAY_DIV.innerHTML = "";
         //});
         setup(); // still need to run setup initially, the mutations observers run only when new content is loaded
+        let observer1 = new MutationObserver(setup);
+        let observer2 = new MutationObserver(setup);
+        let observer3 = new MutationObserver(setup);
+        let observer4 = new MutationObserver(setup);
+
+         function setupMutationObservers(resetFlag) {
+            if (resetFlag) {
+                console.log("mutObs1-4", observer1, observer2, observer3, observer4);
+                [observer1, observer2, observer3, observer4].forEach(el => {
+                    if (el) {
+                        el.disconnect(); // if mutation observer exists, call .disconnect to reconnect later
+                        console.log("just ran disconnect on all active mutation observers")
+                    }
+                });
+                //even if el.disconnect doesn't free memory immediately, the references are lost later on, so should be garbage collected
+            }
+
+            var options = {childList: true}; // when new children are added or old children are removed
+
+            if (window.location.href.slice(0, 32) === "https://www.youtube.com/watch?v=") { // watching video
+                console.log("watching video detected");
+                // var target1 = $("#items.style-scope ytd-watch-next-secondary-results-renderer")[0];
+                var target1 = $("#related")[0].children[1].children[1];
+                observer1.observe(target1, options);
+                console.log("just set mutation observer to observe on video");
+            } else if (window.location.href.slice(0, 32) === "https://www.youtube.com/results?") { // searching
+                var target2 = $("#contents.style-scope.ytd-item-section-renderer")[0];
+                observer2.observe(target2, options);
+                console.log("just set mutation observer to observe on searching");
+            } else if (window.location.href === "https://www.youtube.com/") { // home page
+                var target3 = $("#contents")[0];
+                observer3.observe(target3, options);
+                console.log("just set mutation observer to observe on home");
+            } else { // channel page
+                var target4 = $("#items")[0];
+                observer4.observe(target4, options);
+                console.log("just set mutation observer to observe on channel");
+            }
+
+            console.log("mutObs1-4 should be declared if necessary", observer1, observer2, observer3, observer4);
+
+        }
+
+        setupMutationObservers();
 
         setInterval(function() { // for page changes because YT is largely an SPA
             currentRelevantURL = window.location.href.split("#")[0].split("&t=")[0];
             if (currentURL !== currentRelevantURL) {
+                $(".macroDiv").remove();
                 currentURL = currentRelevantURL;
                 console.log("YDL detected new page loaded SPA style");
-                setTimeout(setup, 1500);
+                setup();
+                setTimeout(function() {
+                    setupMutationObservers(true);
+                }, 2000); // seems to work when set to 2000, probably based on specific connection loading that dom element for mutObs to attach to
             }
         }, 1500);
 
-        var options = {childList: true}; // when new children are added or old children are removed
-
-        if (window.location.href.slice(0, 32) === "https://www.youtube.com/watch?v=") {
-            console.log("watching video detected");
-            // var target1 = $("#items.style-scope ytd-watch-next-secondary-results-renderer")[0];
-            var target1 = $("#related")[0].children[1].children[1];
-            var observer1 = new MutationObserver(setup);
-            observer1.observe(target1, options);
-        } else if (window.location.href.slice(0, 32) === "https://www.youtube.com/results?") {
-            var target2 = $("#contents.style-scope.ytd-item-section-renderer")[0];
-            var observer2 = new MutationObserver(setup);
-            observer2.observe(target2, options);
-        } else {
-            var target3 = $("#contents")[0];
-            var target4 = $("#items")[0];
-            var observer3 = new MutationObserver(setup);
-            var observer4 = new MutationObserver(setup);
-            observer3.observe(target3, options);
-            observer4.observe(target4, options);
-        }
     }, 1500);
 });
 
@@ -273,7 +302,7 @@ function getRelevantByPage() {
 
     relevant = Array.prototype.filter.call(relevant, function(el) {
         console.log("running filter on anchors");
-        return el.href.length < 65 && el.href.includes("youtube.com/watch?v=");
+        return el.href.length < 65 && el.href.includes("youtube.com/watch?v="); // does not work for playlist videos
     });
     return relevant;
 }
@@ -286,7 +315,8 @@ function decodeHTML(html) {
                     .replace(/\\"/g, `"`)
                     .replace(/\\u0026/g, "&")
                     .replace(/\\u003c/g, "<")
-                    .replace(/\\u003e/g, ">");
+                    .replace(/\\u003e/g, ">")
+                    .replace(/\\r/g, "");
 }
 
 function commaHandler(el) {
@@ -315,12 +345,12 @@ function ratio(likes, dislikes) {
     let total = likesNum + dislikesNum;
     let likesPx = Math.floor((likesNum / total) * delta);
     let dislikesPx = Math.floor((dislikesNum / total) * delta);
-    console.log("in ratio, likesNum, dislikesNum, total, likesPx, dislikesPx, width, delta", likesNum, dislikesNum, likesPx, dislikesPx, width, delta);
+    //console.log("in ratio, likesNum, dislikesNum, total, likesPx, dislikesPx, width, delta", likesNum, dislikesNum, likesPx, dislikesPx, width, delta);
     return [likesPx, dislikesPx];
 }
 
 function regExFixerQuals(arr) { // an array of video qualities yet to be isolated via regex
-    console.log("in regExFixerQuals, arr", arr);
+    //console.log("in regExFixerQuals, arr", arr);
     var newArr = [];
     arr.forEach(el => {
         let newEl = el.match(/label=(\d+p)/)[1];
@@ -332,7 +362,7 @@ function regExFixerQuals(arr) { // an array of video qualities yet to be isolate
 }
 
 function regExFixerFPS(arr) { // an array of FPS values yet to be isolated via regex
-    console.log("in regExFixerFPS, arr", arr);
+    //console.log("in regExFixerFPS, arr", arr);
     var newArr = [];
     arr.forEach(el => {
         let newEl = el.match(/fps=(\d+)/)[1];
@@ -344,7 +374,7 @@ function regExFixerFPS(arr) { // an array of FPS values yet to be isolated via r
 }
 
 function regCapsBool(regObj1, regObj2) {
-    console.log("in regCapsBool, regObj1, regObj2", regObj1, regObj2);
+    //console.log("in regCapsBool, regObj1, regObj2", regObj1, regObj2);
     if (!regObj1) {
         return false;
     } else {
@@ -372,10 +402,10 @@ function setupCss() {
                 width: ${macroDivSize * 1.25}px;
                 height: ${macroDivSize}px;
                 z-index: 2050;
-                padding-top: 1px;
                 -webkit-transition: opacity 0.4s, width 0.6s, height 0.6s;
                 transition-timing-function: ease-out;
                 font-size: 12.5px;
+                box-shadow: 0px 0px 10px 0px black;
             }
             .macroDiv:empty {
                 opacity: 0;
@@ -386,33 +416,32 @@ function setupCss() {
                 position: relative;
                 height: 100%;
                 width: 100%;
-                overflow: auto;
             }
             .YDLWrapper2 {
                 position: relative;
                 height: 100%;
                 width: 100%;
-                overflow: auto;
                 background-color: black;
                 color: white;
             }
             .YDLClose {
                 position: absolute;
-                top: 1px;
-                right: 1px;
+                top: -1px;
+                right: -1px;
                 color: white;
                 background-color: red;
-                width: 14px;
-                height: 14px;
+                width: 16px;
+                height: 16px;
                 border: thin;
                 border-size: 0.5;
                 border-color: black;
                 border-style: ridge;
+                box-shadow: 0px 0px 5px -1px black;
             }
             .YDLCloseX {
                 top: 1px;
                 right: 2px;
-                padding-left: 3px;
+                padding-left: 4px;
             }
             .YDLDescription {
                 position: absolute;
@@ -423,23 +452,25 @@ function setupCss() {
                 overflow: scroll;
                 padding-top: 2px;
                 padding-left: 2px;
-                border: #a5a5a5;
-                border-width: thin;
-                border-style: ridge;
+                outline: black;
+                outline-width: 1px;
+                outline-style: solid;
+                outline-offset: 1px;
             }
             .YDLDescription2 {
                 position: absolute;
                 top: 18px;
                 left: 0.5px;
                 right: 0.2px;
-                background-color: #333333;
+                background-color: #232323;
                 color: white;
                 overflow: scroll;
                 padding-top: 2px;
                 padding-left: 2px;
-                border: #a5a5a5;
-                border-width: thin;
-                border-style: ridge;
+                outline: black;
+                outline-width: 1px;
+                outline-style: solid;
+                outline-offset: 1px;
             }
             .YDLLikes {
                 position: absolute;
@@ -480,7 +511,7 @@ function setupCss() {
                 border-top-width: 1px;
                 border-bottom-width: 1px;
                 border-left-width: 1px;
-                border-right-width: 0px;
+                border-right-width: 1px;
             }
             .YDLSubs {
                 position: absolute;
@@ -523,7 +554,7 @@ function setupCss() {
                 left: 0px;
                 bottom: 0px;
                 border: black;
-                border-width: 1px;
+                border-width: 2px 2px 1px 0px;
                 border-radius: initial;
                 border-style: solid;
             }
@@ -614,7 +645,6 @@ function setupCss() {
     }
 }
 
-var currentURL = window.location.href.split("#")[0]; // to store URL on hard load to handle SPA behavior
 
 //.on("DOMSubtreeModified") fires off all of the time, with any miniscule event; if used, must use throttled version
 
@@ -635,23 +665,22 @@ var currentURL = window.location.href.split("#")[0]; // to store URL on hard loa
 
 //no date on video page, so add it
 
-/* styling for ratings bar
-position: absolute;
-    bottom: 1px;
-    left: 51px; dislike has like width + 51
-    font-size: 12px;
-    background-color: lightblue;
-    width: 271px; <== (max), 758 if large, 509 if medium
-    height: 5px;
-*/
+//look into adding video qualities available - all video qualities are too long, and highest quality implies lower qualities, so will only display highest
+//subtitles, closed captions - inconsistencies with the ways closed captions are present, although that may be from the uploader setting certain options
 
-//look into adding video qualities available
-//subtitles, closed captions
+//related 20 videos on video page are already in the JSON response for that page, subsequent videos (additional 20+ on desktop) are the result of an ajax call
 
 //need to deal with fact that YT is now, more or less, a SPA - need to re-run script if changing between channel - video - home - search
 
 //sometimes the regEx captures of the video qualities and FPS numbers would fail, but work when tried again a second later, implying the incoming JSON may be different
-    //depending on when you make a get request, perhaps the front end of youtube can render the video given the data either way
+    //depending on when you make a get request, perhaps the front end of youtube can render the video given the data either way, sometimes completely absent
 
 //need to have menu appear near anchor tag or near mouse
-//mutation observer disconnect
+//mutation observer disconnect AND clear cache, possibly remove event listeners although shouldn't be necessary
+//need an option to click to display div, like in word counter
+
+//on home page, 6th row (1st row in 1st loading event) doesn't load divs properly until a second loading event
+
+//if dom node is deleted and then another very similar dom node is created, does the event listener attached to the first one get garbage collected?  does it need to be?
+
+//can't add comments, endpoint is ridiculously longed encrypted/hashed string, and is a post request (not sure why, maybe for YT being the only way to see comments)
