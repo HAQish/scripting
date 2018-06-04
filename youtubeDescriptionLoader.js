@@ -16,8 +16,14 @@ const CLASS_NAME = "ytDescriptionSet";
 const DESC_CACHE = {};
 let DISPLAY_DIV;
 let theme = true;
-let macroDivSize = localStorage.getItem("YDLSize") ? localStorage.getItem("YDLSize") : 260; // default is small : 260 pixels
-let descHeight = localStorage.getItem("descHeight") ? localStorage.getItem("descHeight") : 70; // default is small : 70%
+if (localStorage.getItem("YDLSize") === null) {
+    localStorage.setItem("YDLSize", "260"); // default is small : 260 pixels
+}
+var macroDivSize = localStorage.getItem("YDLSize");
+if (localStorage.getItem("descHeight") === null) {
+    localStorage.setItem("descHeight", "70"); // default is small : 70%
+}
+var descHeight = localStorage.getItem("descHeight");
 var currentURL = window.location.href.split("#")[0].split("&t=")[0]; // to store URL on hard load to handle SPA behavior
 
 console.log("YDL some variables declared");
@@ -34,7 +40,11 @@ function setup() {
         el.classList.add(CLASS_NAME); // to mark it so we never iterate over it twice
         element.addEventListener("mouseenter", function(e) {
 
-            console.log("eventlistener for mouseenter on anchor activated");
+            console.log("mouseenter => clientX, clientY, pageX, pageY, screenX, screenY", e.clientX, e.clientY, e.pageX, e.pageY, e.screenX, e.screenY);
+
+            $(".macroDiv").css("left", `${e.pageX - (localStorage.getItem("YDLSize") * 1.25)}px`);
+            $(".macroDiv").css("top", `${e.pageY}px`);
+            $(".macroDiv").css("position", "absolute");
 
             if (window.location.href.slice(0, 32) === "https://www.youtube.com/watch?v=" ? DESC_CACHE[el.innerText] : DESC_CACHE[el.title]) { // if cached
                 console.log("READING FROM CACHE");
@@ -82,8 +92,8 @@ function setup() {
                                                 <div class='YDLSettingsWrapper'><div class='YDLSettingsChangeLarge'>Large</div>
                                                 <div class='YDLSettingsChangeMedium'>Medium</div>
                                                 <div class='YDLSettingsChangeSmall'>Small</div></div>
-                                                <div class='YDLClose'><div class='YDLCloseX'>X</div></div>
-                                                <div class='YDLCaps'>${capsFinal ? "CC" : ""}</div>
+                                                <div class='YDLClose'><div class='YDLCloseX' title='Close'>X</div></div>
+                                                <div class='YDLCaps' title='Custom-made Closed Caption tracks available'>${capsFinal ? "CC" : ""}</div>
                                                 <div class='YDLQuals'>${fixedQuals === false ? "<span class='unavailable'>Max Resolution: Unavailable.</span>" : "Max Resolution: " + fixedQuals[0]}</div>
                                                 <div class='YDLFPS' title='Different quality versions of the same video can have different framerates'>${fixedFPSNums === false ? "<span class='unavailable'>Max FPS: Unavailable</span>" : "Max FPS: " + fixedFPSNums[0]}</div>
                                                 <div class='YDLRatingBarLike' style='width: ${ratingBarSizes === undefined ? "0" : ratingBarSizes[0]}px;'></div>
@@ -283,6 +293,7 @@ $(window).on("load", function() {
                 setup();
                 setTimeout(function() {
                     setupMutationObservers(true);
+                    const DESC_CACHE = {};
                 }, 2000); // seems to work when set to 2000, probably based on specific connection loading that dom element for mutObs to attach to
             }
         }, 1500);
@@ -684,3 +695,36 @@ function setupCss() {
 //if dom node is deleted and then another very similar dom node is created, does the event listener attached to the first one get garbage collected?  does it need to be?
 
 //can't add comments, endpoint is ridiculously longed encrypted/hashed string, and is a post request (not sure why, maybe for YT being the only way to see comments)
+
+//a long enough timeout seems to fix the problem with re-initializing mutation observers, but not an optimal solution
+
+/*
+* Less bold outline (maybe give some softer / rounder edges? 1-2 pixels?
+* Kill large, make medium large, make small medium, then add minimalistic
+  * Minimalistic: 4 lines of text at most, add a ..., only show: Upload date, likes/dislikes (4M/100K) OR just show bar!
+* With bar, make blue more radiant, no black line between blue/red
+* Make top line consistent line heaviness
+* Slightly grayer text
+* Change X to not be Red box, instead more modern gray thing
+* Calculate where on the page and move the box dynamically based on what quadrant of the screen you're in
+* Add a little tooltip triangle thing
+* When mouseaway, make the thing fade
+* Add some animation for fading / popping in (very short)
+* Also add on mouseover of video (extra important that you never obscure the video itself)
+* add views
+*/
+
+
+let url = location.href;
+document.body.addEventListener('click', ()=>{
+    requestAnimationFrame(()=>{
+      url!==location.href&&console.log('url changed');
+      url = location.href;
+    });
+}, true);
+
+//when displaying, first set display to none
+//then calculate if it needs to be moved, make sure the el.getBoundingClientRect() does NOT overlap with the dismissable.getBoundingClientRect() and no negative values
+    //getBoundingClientRect() values are for the viewport
+    //as another note, #dismissable is not useful as a query because there are multiple things (like with #items) that have that id
+        //will have to go upwards via .parent or something similar until an element that matches the className dismissable exists, and then check that rectangle
