@@ -441,3 +441,78 @@
 //window.oncontextmenu = function(e) {whateverFunctionCode} <== not sure why this exists, should be the exact same as the above
   //there are window.events for almost, if not all, events - i guess it's for any event in that tab, rather than necessarily the body specifically, although not sure
     //what the difference would be, the right click handler doesn't work outside of the body in that it doesn't work in the console or other menus anywhere
+
+
+//in the window object, under clientInformation
+  //appCodeName:"Mozilla", appName:"Netscape", appVersion:"5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+  //why Mozilla, chrome is not made by Mozilla - and why netscape, chrome is separate
+  //appVersion is OS version probably - if the app can tell the OS version of the client, why do websites make you choose your own OS when downloading?
+  //presumably, because this is all on window, the website can access it - after all, it can access window.localStorage, which is on the client
+    //that localStorage object only applies to the IG domain, so is the window calculated for each tab by chrome and always accessible to the website?
+
+//running window.clearInterval() and window.clearTimeout() does not get rid of the automatic event logging and post requests - can chrome not control its own event loop?
+
+//if an iframe is like another document in the same tab, is that tab with 2 documents still single-threaded?  does the iframe have access to the window?
+  //if the iframe has access to the window because it's a single thread, that would mean the src of the iframe could read personal data meant for another website
+  //so, it seems unlikely that it would be the case - so, loading an iframe must mean the tab now has two threads, meaning chrome allocates more memory for that tab
+  //apparently, the iframe context can access the higher-level window with window.parent, referencing the original window object - however, that is an "attenuated" object
+    //it probably takes the real window object and filters out personal information (client information and localStorage is gone) before returning the object for access
+    //doing window.parent.window doesn't go any "higher", it just recursively returns itself like the regular window.window when at the highest level
+    //so, the iframe can not access the real top-level window - if so, doesn't that mean it's subject to garbage collection?
+      //garbage collection - on an interval, deleting any var objects (all vars are objects in JS) that don't have another object referencing that object in a key or value
+      //^^ above is defunct, now the way is to recursively go down the tree of the macro-level window and see if the variable in question ever appears
+        //although, if not in the window object, the JS engine cannot simply do delete obj.value, there must be some hidden way to delete values
+    //given that the iframe only has certain things on the window object, taken from the higher window object, the iframe is necessarily less functional
+      //so, any app in an iframe would be very limited in functionality?
+      //still, given that some things go from the higher window to the iframe window, the iframe has access to things outside of itself, while the higher window has no access?
+
+//window.close() seems to want to close the window, but chrome gives a warning that `Scripts may close only the windows that were opened by it.`
+
+//htmlElement.webkitRequestFullScreen() is a function that immediately (it's possible that sometimes there is a prompt) makes that element the only element visible
+  //that element remains in the viewport, at the same size, and everything else is black
+    //no scrolling, even if element is larger than viewport - can highlight, and copy text, still contextual mouseover events like mousing over anchors
+      //the swipe-left gesture makes the back arrow appear, but both that and command+left don't actually change the page
+      //perhaps most curious of all, it seems to be stuck on the center of the document, no matter where you were scrolled before firing the event
+        //however, you are returned to your original scroll position when you exit the fullscreen viewing mode via escape
+  //not sure why it exists for every possible element, but works on HTML elements, <svg>, <iframe>, and <math> elements
+  //must be invoked by the user or a "device orientation change", does that mean a change in the monitor settings, or landscape/portrait orientation in tablets and phones?
+  //i figured the browsers in tablets and phones were very different, and orientation changes were meant for those devices, and not for PCs/laptops
+  //however, sometimes the mobile version of a site is activated just when it detects a certain screen size or aspect ratio
+  //given that, as above on the clientInformation on the window object, the app can determine the device and OS, would the front end not always know to use the mobile app?
+  //even if the screen orientation changed, there's no reason for it to be inherently different from resizing the window by dragging the mouse cursor
+    //so why is it a different event? it should still resize to the width of the viewport (if responsive a la PWA style) and move frames around
+      //usually managing the width is more important than managing the height
+  //the fullscreen function is asynchronous - it's not necessarily a read or write, it's just a resizing or re-rendering of the content, so why does it need the event loop?
+
+
+//considering that a .css file is a separate file, from the perspective of an app with just one html file, wouldn't it be faster to have all styling in one style object
+  //at the top of the html document to minimize the file system-based reading?
+
+//when intending to open a link in a new window/tab (i think new tab is meaningless to JS itself, the browser decides to interpret 'new window' as 'new tab')
+  //<base target="_blank"> needs to go before the anchor - without the underscore, it does not work
+    //the <base> tag is just to set the base for any relative URLs, so setting the implied domain in relative (/feature/) URLs, only 1 per document, preferrably in head
+  //or just target="_blank" in the anchor tag itself - needs double quotes rather than single quotes, not sure why it matters
+  //also _parent for the parent frame and _self for the current frame and _top for the 'full body of the window'
+  //when trying to do target="_self" in an iframe and clicking, the href page did not load in the iframe
+    //i suspected that you could use an iframe as a mini-browser within the tab itself, but trying to go from an iframe to google just cleared the body of the iframe
+  //couldn't a malicious script open an absurd number of tabs by adding an invisible anchor with a _blank target, and on an interval, opening 100 tabs through
+    //targeting the invisible anchor element and triggering .click()?
+    //apparently not, it's giving some error, although it's not logging it, not sure how to see exactly what the error is, but probably a browser feature to prevent it
+    //gives same error if trying to trigger the click in another event listener, like clicking on the dom opens the new tab
+    //^^ nevermind above, apparently the %0 selector doesn't work as well in some functions
+    //when selecting the invisible anchor normally, it opened one tab, and all of the other ones on the dom body click were treated as popups blocked by chrome
+    //it seems to do the same with timeouts and intervals, it seems to allow a maximum of one to be opened as the result of a function call and anything else is a popup
+    //is there some way to jerryrig a way to open multiple tabs through some chaining of functions?
+    //if you can somehow send some code "into" that new tab, then could a malicious script use that method?  line 469 of this document suggests that is possible
+
+//just noticed this after a typo, but you can document.createElement("anything") and it will create a proper-looking <anything></anything> tag - why if potentially invalid?
+  //that's probably a feature to allow different front-end libraries to create new kinds of tags specific for that library
+
+
+
+
+
+
+
+
+
