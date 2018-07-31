@@ -9,8 +9,26 @@
 // @grant        none
 // ==/UserScript==
 
+//if, on profile page
+  //if profile name text on page matches profile parameter in url, then currently on profile page
+  //a SPA so will have to do the check once load has been done, or after a click - some kind of event, or on any mutation observed
+  //sometimes loading bar appears, but sometimes app seems fast enough to where it never appears - need to find out if it always appears
+  //loading bar appears more right after a 'hard GET' - implies that certain pages are maybe cached in app when loaded
+    //seeing as it's a SPA, different html files as webpages wouldn't be cached - does the browser also cache SPA components when loaded?
+    //if not, there could be something in code that caches what certain elements are when loaded, like I do in the YDL object store
 
-
+//loading bar
+  //difficult to single out, tried to make something load and then do control+command+c to target it
+  //goes away as soon as it loads, and the loading of new elements makes the DOM reset, so highlighting that dom element is cancelled once the new elements load
+  //debugger worked, now can target the two classes of the span that is the loader bar
+    //it is a screen-width rectangle with a rainbow animation of changing colors
+    //still hangs a little bit when at maximum screen-width, implying that it's done loading before it actually loads
+      //the disconnect might be that the progress bar is on the request being done, and the time between being full-width and the actual loading
+        //is the data in memory being parsed and inserted into the react code before being loaded into memory as an HTML page
+        //that would imply the progress bar is on the download status of the "file" of the code returned from the IG database
+        //that implies that any download means the browser is first sent the filename (implied in the url or in the download HTML5 code) and the size
+          //although, there is the occasional file where the length of the file isn't clear until it is completely downloaded
+          //it's possible that the
 
 
 
@@ -508,7 +526,11 @@
 //just noticed this after a typo, but you can document.createElement("anything") and it will create a proper-looking <anything></anything> tag - why if potentially invalid?
   //that's probably a feature to allow different front-end libraries to create new kinds of tags specific for that library
 
-
+//in query selectors, an example - document.querySelectorAll("button[title]") selects all button with the attribute (or attr) of title
+  //it seems that even though [attr='value'] works, it does not work unless it's something that is custom-set
+    //buttons already have an innerText property - accessing it through this method, however, doesn't work
+      //leading to the conclusion that perhaps attribute specifically means something custom set by the user or a function written by someone
+  //"button:contains('textOfButton')" is a jQuery thing, not a native HTML thing
 
 
 
