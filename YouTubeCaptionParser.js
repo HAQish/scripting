@@ -30,17 +30,24 @@ $(window).on("load", function() {
                 success: function(data) {
                     console.log("in success, no parsing yet, data is", data);
                     try {
-                        transSpan.innerText = "Fetched!";
                         cap = data;
                         var ser = new XMLSerializer();
-                        var formattedText = ser.serializeToString(cap).replace(/<\/text>/g, "\n").replace(/<[^>]+>/g, "").replace(/&amp;#39;/g, "'");
+                        console.log("stringified XML before parsing", ser.serializeToString(cap));
+                        var formattedText = ser.serializeToString(cap).replace(/<text start="[\d\.]+" dur="[\d\.]+">[\s\n]+<\/text>/g, "")
+                        .replace(/\n{2,}/, "")
+                        .replace(/\n/g, "\r\n")
+                        .replace(/<\/text>/g, "\r\n")
+                        .replace(/<[^>]+>/g, "")
+                        .replace(/&amp;#39;/g, "'")
+                        .trim();
                         console.log("ran ajax call, about to alert or log");
                         console.log(formattedText);
 
                         //now to create an anchor element with the download, and then simulate a click so user doesn't need to click again
                         var downloadAnchor = document.createElement("a");
                         downloadAnchor.download = document.title + " English Subtitles.txt";
-                        downloadAnchor.href = `data:application/csv;charset=utf-8,${encodeURI(formattedText)}`;
+                        downloadAnchor.href = `data:application/txt;charset=utf-8,${encodeURI(formattedText)}`;
+                        transSpan.innerText = "Fetched!";
                         downloadAnchor.innerText = "download text";
                         $(transSpan).after(downloadAnchor);
                         downloadAnchor.style.display = "none";
@@ -48,6 +55,7 @@ $(window).on("load", function() {
                         downloadAnchor.remove();
                     } catch(e) {
                         console.log("in success, error caught");
+                        transSpan.innerText = "No English caption track!";
                     }
                 },
                 error: function(data) {
@@ -55,7 +63,7 @@ $(window).on("load", function() {
                 }
             });
         });
-    }, 1000);
+    }, 6000);
 });
 
 //changing css of transSpan only works after it has already been added to the DOM via the .after
@@ -102,4 +110,4 @@ $(window).on("load", function() {
   //still not clear on where exactly the file is before it is downloaded, or if it never exists on the local machine until the download - can it be opened in the browser
     //in any way without saving it via the prompt first?  there are add-ons where you can open files in the /temp/ folder before "officially" downloading something
       //and there is no download prompt for the file in the /temp/ folder
-  //couldn't a virus be made with an .exe this way?
+//couldn't a virus be made with an .exe this way?
