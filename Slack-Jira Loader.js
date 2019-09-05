@@ -36,8 +36,10 @@ function messageParser() {
   Array.from(document.querySelectorAll(".c-message__body")).forEach(messageNode => {
     let matches = messageNode.innerHTML.match(/([A-Z]{2,4}-\d{3,4})(?!<\/span>|"|\S*<\/a>|\S+" rel="|\d)/g);
     if (matches) {
-        matches.forEach(str => {
-        messageNode.innerHTML = messageNode.innerHTML.replace(str, `<span><a href="https://genomemedical.atlassian.net/browse/${str}">${str}</a></span>`);
+        let uniqueMatches = Array.from(new Set(matches));
+        uniqueMatches.forEach(str => {
+        let newRegEx = new RegExp(str, "g");
+        messageNode.innerHTML = messageNode.innerHTML.replace(newRegEx, `<span><a href="https://genomemedical.atlassian.net/browse/${str}">${str}</a></span>`);
       });
     }
   });
