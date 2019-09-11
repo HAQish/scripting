@@ -39,7 +39,7 @@ function messageParser() {
         let uniqueMatches = Array.from(new Set(matches));
         uniqueMatches.forEach(str => {
         let newRegEx = new RegExp(str, "g");
-        messageNode.innerHTML = messageNode.innerHTML.replace(newRegEx, `<span><a href="https://genomemedical.atlassian.net/browse/${str}">${str}</a></span>`);
+        messageNode.innerHTML = messageNode.innerHTML.replace(newRegEx, `<span><a target="_blank" href="https://genomemedical.atlassian.net/browse/${str}">${str}</a></span>`);
       });
     }
   });
