@@ -4,8 +4,17 @@ counterFThree := 0
 counterBOne := 0
 counterBTwo := 0
 counterBThree := 0
+
 counterVLCFOne := 0
 counterVLCBOne := 0
+
+counterYTFOne := 0
+counterYTFTwo := 0
+counterYTFThree := 0
+counterYTBOne := 0
+counterYTBTwo := 0
+counterYTBThree := 0
+
 SetTitleMatchMode, 2
 
 Media_Next::
@@ -42,6 +51,9 @@ Media_Next::
         }
         else if (counterYTFOne = 0 && counterYTFTwo = 0 && counterYTBOne = 1 && counterYTBTwo = 0) {
             counterYTBTwo := 1
+            Send {l}
+        }
+        else {
             Send {l}
         }
     }
@@ -104,6 +116,9 @@ Media_Prev::
         }
         else if (counterYTFOne = 1 && counterYTFTwo = 0 && counterYTBOne = 0 && counterYTBTwo = 0) {
             counterYTFTwo := 1
+            Send {j}
+        }
+        else {
             Send {j}
         }
     }
