@@ -167,6 +167,44 @@ Media_Play_Pause::
     }
 return
 
+PgUp::
+    if WinActive(" - VLC media player") or WinActive("ahk_class vlc.exe") {
+        Send {p}
+    } else {
+        Send {PgUp}
+    }
+return
+
+PgDn::
+    if WinActive(" - VLC media player") or WinActive("ahk_class vlc.exe") {
+        Send {n}
+    } else {
+        Send {PgDn}
+    }
+return
+
+~d::
+  if WinActive("ahk_exe CDisplay.exe") {
+    Send {MButton}
+    sleep 500 ;
+    Send {s}
+    sleep 500 ;
+    Send {o}
+    sleep 400 ;
+    Send {Enter}
+  }
+return
+
+~e::
+  if WinActive("ahk_exe CDisplay.exe") {
+    Send {MButton}
+    sleep 500 ;
+    Send {s}
+    sleep 500 ;
+    Send {o}
+  }
+return
+
 
 counterReset:
     counterFOne := 0
