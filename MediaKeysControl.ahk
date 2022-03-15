@@ -15,6 +15,9 @@ counterYTBOne := 0
 counterYTBTwo := 0
 counterYTBThree := 0
 
+counterWinOne := 0
+counterWinTwo := 0
+
 SetTitleMatchMode, 2
 
 Media_Next::
@@ -159,7 +162,19 @@ Media_Play_Pause::
     }
     else {
         if WinExist("ahk_class Winamp v1.x") {
-            ControlSend, ahk_parent, c
+            if (counterWinOne = 0 && counterWinTwo = 0) {
+                counterWinOne := 1
+                ControlSend, ahk_parent, c
+                SetTimer, counterResetPlayWinamp, 1000 ; 
+            } else if (counterWinOne = 1 && counterWinTwo = 0) {
+                counterWinTwo := 1
+                ControlSend, ahk_parent, c
+            } else if (counterWinOne = 1 && counterWinTwo = 1) {
+                ControlSend, ahk_parent, x
+            }
+            else {
+                ControlSend, ahk_parent, c
+            }
         }
         else {
             Send {Media_Play_Pause}
@@ -186,11 +201,11 @@ return
 ~d::
   if WinActive("ahk_exe CDisplay.exe") {
     Send {MButton}
-    sleep 500 ;
+    sleep 650 ;
     Send {s}
-    sleep 500 ;
+    sleep 650 ;
     Send {o}
-    sleep 400 ;
+    sleep 500 ;
     Send {Enter}
   }
 return
@@ -198,10 +213,22 @@ return
 ~e::
   if WinActive("ahk_exe CDisplay.exe") {
     Send {MButton}
-    sleep 500 ;
+    sleep 600 ;
     Send {s}
-    sleep 500 ;
+    sleep 600 ;
     Send {o}
+  }
+return
+
+~f::
+  if WinActive("ahk_exe CDisplay.exe") {
+    Send {MButton}
+    sleep 800 ;
+    Send {s}
+    sleep 800 ;
+    Send {o}
+    sleep 500 ;
+    Send {Enter}
   }
 return
 
@@ -227,4 +254,9 @@ counterResetYT:
     counterYTBOne := 0
     counterYTBTwo := 0
     counterYTBThree := 0
+return
+
+counterResetPlayWinamp:
+    counterWinOne := 0
+    counterWinTwo := 0
 return
