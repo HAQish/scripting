@@ -76,7 +76,7 @@ Media_Next::
         
     }
     else {
-        if WinExist("ahk_class Winamp v1.x") {
+        if WinExist("ahk_class Winamp v1.x") or WinExist("ahk_class Winamp PE") {
             ControlSend, ahk_parent, b
         }
         else {
@@ -141,7 +141,7 @@ Media_Prev::
         
     }
     else {
-        if WinExist("ahk_class Winamp v1.x") {
+        if WinExist("ahk_class Winamp v1.x") or WinExist("ahk_class Winamp PE") {
             ControlSend, ahk_parent, z
         }
         else {
@@ -152,7 +152,7 @@ return
 
 Media_Play_Pause::
     if WinActive(" - YouTube") {
-        Send {k}
+        ControlSend, ahk_parent, {Space}
     }
     else if WinActive(" - VLC media player") or WinActive("ahk_class vlc.exe") {
         Send {Space}
@@ -161,11 +161,11 @@ Media_Play_Pause::
         Send {Space}
     }
     else {
-        if WinExist("ahk_class Winamp v1.x") {
+        if WinExist("ahk_class Winamp v1.x") or WinExist("ahk_class Winamp PE") {
             if (counterWinOne = 0 && counterWinTwo = 0) {
                 counterWinOne := 1
                 ControlSend, ahk_parent, c
-                SetTimer, counterResetPlayWinamp, 1000 ; 
+                SetTimer, counterResetPlayWinamp, 1500 ; 
             } else if (counterWinOne = 1 && counterWinTwo = 0) {
                 counterWinTwo := 1
                 ControlSend, ahk_parent, c
