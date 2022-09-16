@@ -1,0 +1,43 @@
+// ==UserScript==
+// @name         YT Shorts comment fixer
+// @namespace    youtube.com
+// @version      1.0
+// @description  Changes the CSS controlling the comment modal in YT shorts
+// @author       You
+// @match        *.youtube.com/shorts/*
+// @include      *.youtube.com/shorts/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
+// @grant        none
+// ==/UserScript==
+
+<!-- Assuming YT shorts page with 175% zoom on a 4k monitor -->
+
+const newStyle = `
+  <style>
+    body > ytd-app > ytd-popup-container > tp-yt-paper-dialog {
+      left: 68vw !important;
+      top: -89px !important;
+      position: absolute !important;
+    }
+
+    body > ytd-app > ytd-popup-container > tp-yt-paper-dialog > ytd-engagement-panel-section-list-renderer {
+      width: 550px !important;
+      height: 100vh !important;
+      max-height: unset !important;
+      max-width: unset !important;
+      min-height: 105vh !important;
+    }
+
+    #contents {
+      padding: 0px 0px 24px 12px !important;
+    }
+
+    body > tp-yt-iron-overlay-backdrop {
+      opacity: 0 !important;
+    }
+  </style>
+`;
+
+const headEl = document.querySelector("head");
+
+headEl.innerHTML += newStyle;
