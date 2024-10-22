@@ -87,7 +87,7 @@ Media_Next::
             Send {n}
         }
     }
-    else if WinActive("Joe Rogan Experience") {
+    else if WinActive("Spotify - Google Chrome") or WinActive("Podcast - Google Chrome") or WinActive("Joe Rogan Experience") {
         
     }
     else {
@@ -164,7 +164,7 @@ Media_Prev::
             Send {p}
         }
     }
-    else if WinActive("Joe Rogan Experience") {
+    else if WinActive("Spotify - Google Chrome") or WinActive("Podcast - Google Chrome") or WinActive("Joe Rogan Experience") {
         
     }
     else {
@@ -184,7 +184,7 @@ Media_Play_Pause::
     else if WinActive(" - VLC media player") or WinActive("ahk_class vlc.exe") {
         Send {Space}
     }
-    else if WinActive("Joe Rogan Experience") {
+    else if WinActive("Spotify - Google Chrome") or WinActive("Podcast - Google Chrome") or WinActive("Joe Rogan Experience") {
         Send {Space}
     }
     else {
@@ -254,6 +254,9 @@ PgDn::
         } else {
             Send {PgDn}
         }
+    } else if WinActive("ahk_class SDL_app") {
+        Send {Space}
+        Send {PgDn}
     } else {
         Send {PgDn}
     }
@@ -309,6 +312,83 @@ return
 return
 */
 
+~Numpad6::
+  if WinActive("ahk_exe MMCE_Win32.exe") {
+    Send {Control Down}
+    Send {s} 
+    Send {Control Up}
+  }
+return
+
+~Numpad9::
+  if WinActive("ahk_exe MMCE_Win32.exe") {
+    Send {Control Down}
+    Send {s} 
+    Send {Control Up}
+    sleep 600 ;
+    Send {Enter}
+  }
+return
+
+
+/*
+~Tab::
+  if WinActive(" - VLC media player") or WinActive("ahk_class vlc.exe") or WinActive(" - YouTube") or WinActive("Spotify - Google Chrome") or WinActive("Podcast - Google Chrome") or WinActive("Joe Rogan Experience") or WinActive("vids - ") or WinActive("webms - ") or WinActive("MMCE") or WinActive("FastStone Image Viewer") {
+    Send {WheelDown 1}
+  }
+return
+*/
+
+~Tab::
+  if WinActive(" - VLC media player") or WinActive("ahk_class vlc.exe") or WinActive("vids - ") or WinActive("webms - ") or WinActive("comf - ") or WinActive("shorts - ") {
+    Send {r}
+  }
+return
+
+F5::
+  if WinExist("ahk_class Winamp v1.x") or WinExist("ahk_class Winamp PE") {
+      ControlSend, ahk_parent, s
+  }
+return
+
+F6::
+  Send {Volume_Mute}
+return
+
+F7::
+  Send {Volume_Down}
+return
+
+F8::
+  Send {Volume_Up}
+return
+
+F9::
+  Send {Media_Stop}
+return
+
+F10::
+  Send {Media_Play_Pause}
+return
+
+F11::
+  Send {Media_Prev}
+return
+
+F12::
+  Send {Media_Next}
+return
+
+Launch_Mail::
+return
+
+AppsKey::
+  Send {RWin down}
+return
+
+AppsKey Up::
+  Send {RWin up}
+return
 
 counterReset:
     counterFOne := 0
