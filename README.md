@@ -7,6 +7,8 @@ Loads a description of a YouTube video in a small floating div when you hover ov
 
 #MediaControls
 AHK (AutoHotKey) script to add various controls to Windows applications.
+
 ![img](https://static.wikia.nocookie.net/mvccsh/images/d/d6/Autohotkey_01.png/revision/latest?cb=20190509015657)
+
 For example, Next track => Prev track => Next track can go to the next Youtube video
 A similar command can load the next file in CDisplay
